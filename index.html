@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mother Panel - Progress</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, sans-serif;
+      margin: 0;
+      padding: 0;
+      background: #eef2f7;
+    }
+    header {
+      background: linear-gradient(90deg, #667eea, #764ba2);
+      color: white;
+      text-align: center;
+      padding: 18px;
+      font-size: 1.6em;
+      font-weight: bold;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+    .container {
+      padding: 15px;
+    }
+    .card {
+      background: white;
+      padding: 15px;
+      border-radius: 14px;
+      margin-bottom: 18px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+    }
+    .card h3 {
+      margin: 0 0 10px;
+      color: #333;
+      font-size: 1.2em;
+    }
+    .progress-bar {
+      width: 100%;
+      background: #e0e0e0;
+      border-radius: 8px;
+      overflow: hidden;
+      height: 14px;
+      margin: 8px 0 10px;
+    }
+    .progress-bar span {
+      display: block;
+      height: 100%;
+      background: linear-gradient(90deg, #43cea2, #185a9d);
+      width: 0%;
+      transition: width 0.4s ease;
+      border-radius: 8px;
+    }
+    .topics {
+      margin-top: 10px;
+    }
+    .topic {
+      display: flex;
+      justify-content: space-between;
+      padding: 6px 10px;
+      border-bottom: 1px solid #f0f0f0;
+      font-size: 0.95em;
+      color: #555;
+    }
+    .topic:last-child {
+      border-bottom: none;
+    }
+    .status-done {
+      color: green;
+      font-weight: bold;
+    }
+    .status-pending {
+      color: red;
+      font-weight: bold;
+    }
+    .overall-card {
+      background: #fff3cd;
+      border-left: 6px solid #ffb100;
+    }
+    .overall-card h3 {
+      color: #856404;
+    }
+  </style>
+</head>
+<body>
+  <header>📚 Mother's Panel</header>
+  <div class="container">
+    <!-- Overall Progress -->
+    <div class="card overall-card">
+      <h3>Overall Progress</h3>
+      <div class="progress-bar"><span id="overallBar"></span></div>
+      <p id="overallText">0% Completed</p>
+    </div>
+    <!-- Subject Cards -->
+    <div id="subjectCards"></div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+    import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
+
+    // ✅ Your Firebase config
+    const firebaseConfig = {
+      apiKey: "AIzaSyDnSATADCuJfXxcwf-27dshTR3cE3R-Mwc",
+      authDomain: "ool-cee35.firebaseapp.com",
+      databaseURL: "https://ool-cee35-default-rtdb.firebaseio.com",
+      projectId: "ool-cee35",
+      storageBucket: "ool-cee35.firebasestorage.app",
+      messagingSenderId: "715211713531",
+      appId: "1:715211713531:web:2c20aec23d10605dea395e",
+      measurementId: "G-STDCJGHM40"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    const subjectCards = document.getElementById("subjectCards");
+    const overallBar = document.getElementById("overallBar");
+    const overallText = document.getElementById("overallText");
+
+    onValue(ref(db, "syllabus"), (snapshot) => {
+      let data = snapshot.val();
+      subjectCards.innerHTML = "";
+      let totalTopics = 0, completedTopics = 0;
+
+      for (let subject in data) {
+        let topics = data[subject];
+        let total = Object.keys(topics).length;
+        let done = Object.values(topics).filter(v => v === true).length;
+
+        totalTopics += total;
+        completedTopics += done;
+
+        let percent = total > 0 ? Math.round((done / total) * 100) : 0;
+
+        // Create subject card
+        let card = document.createElement("div");
+        card.className = "card";
+        card.innerHTML = `
+          <h3>${subject}</h3>
+          <div class="progress-bar"><span style="width:${percent}%"></span></div>
+          <p>${done} of ${total} Completed (${percent}%)</p>
+          <div class="topics"></div>
+        `;
+
+        // Show topics with status
+        let topicsDiv = card.querySelector(".topics");
+        for (let topic in topics) {
+          let status = topics[topic] ? `<span class="status-done">✅ Done</span>` 
+                                     : `<span class="status-pending">❌ Pending</span>`;
+          let topicDiv = document.createElement("div");
+          topicDiv.className = "topic";
+          topicDiv.innerHTML = `<span>${topic}</span> ${status}`;
+          topicsDiv.appendChild(topicDiv);
+        }
+
+        subjectCards.appendChild(card);
+      }
+
+      // Overall progress
+      let overallPercent = totalTopics > 0 ? Math.round((completedTopics / totalTopics) * 100) : 0;
+      overallBar.style.width = overallPercent + "%";
+      overallText.textContent = `${completedTopics} of ${totalTopics} Completed (${overallPercent}%)`;
+    });
+  </script>
+</body>
+</html>
